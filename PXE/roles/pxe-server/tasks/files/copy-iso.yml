@@ -1,0 +1,19 @@
+---
+- name: play copy 
+  become: true 
+  hosts: all  
+  tasks:
+
+  - name: Création des répertoires d'un path
+    file:
+      path: /root/serveur 
+      state: directory
+      mode: 777
+
+  - name: copy ubuntu 
+    copy:
+      src: ~/OS/
+      dest: /root/serveur/
+      mode: 777 
+    
+

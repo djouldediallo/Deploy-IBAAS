@@ -1,0 +1,31 @@
+# disable dns
+port=0
+
+# dhcp
+log-dhcp
+interface=eno1
+bind-dynamic
+
+dhcp-no-override
+
+# proxy dhcp
+dhcp-range=192.168.1.1,proxy
+
+# tftp server
+enable-tftp
+tftp-root= /pxeboot
+
+#configuration de démarrage pour les systèmes BIOS
+dhcp-match=set:bios-x86,option:client-arch, 0
+dhcp-boot=tag:bios-x86,firmware/ipxe.pxe
+
+# configuration de démarrage pour les systèmes UEFI
+dhcp-match=set:efi-x86_64,option:client-arch,7
+dhcp-match=set:efi-x86_64,option:client-arch,9
+dhcp-boot=tag:efi-x86_64,firmware/ipxe.efi
+
+dhcp-vendorclass=UEFI,PXEClient:Arch:00007
+
+pxe-prompt="Booting FOG Client", 1
+pxe-service=X86-64_EFI, "Boot to FOG UEFI", firmware/ipxe.efi
+pxe-service=BC_EFI, "Boot to FOG UEFI PXE-BC", firmware/ipxe.efi

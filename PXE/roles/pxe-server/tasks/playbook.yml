@@ -1,0 +1,278 @@
+--- 
+- name: configure server ipxe 
+  hosts: all 
+  become: true 
+  tasks:
+
+  - name: Configure network connection
+    command: nmcli connection modify "Connexion filaire 1" ipv4.method manual ipv4.addresses 192.168.1.10/24 gw4 192.168.1.1 ipv4.dns 1.1.1.1,8.8.8.8
+
+  - name: Activate network connection
+    command: nmcli connection up "Connexion filaire 1"
+
+  - name: Stop and disable systemd-resolved
+    service:
+      name: systemd-resolved
+      state: stopped
+      enabled: no
+
+  - name: Remove resolv.conf symlink
+    file:
+      path: /etc/resolv.conf
+      state: absent
+
+
+  - name: copy file resolv
+    copy:
+      src: resolv.conf
+      dest: /etc/
+
+  - name: Create directories for PXE boot server
+    file:
+      path: /pxeboot/{{ item }}
+      state: directory
+    loop:
+      - config
+      - firmware
+      - os-images
+
+  - name: Update package repositories
+    apt:
+      update_cache: yes
+
+  - name: Install required packages
+    apt:
+      name:
+        - build-essential
+        - liblzma-dev
+        - isolinux
+        - git
+        - dnsmasq
+        - nfs-kernel-server
+      state: present
+
+
+  - name: create directory for clone 
+    file: 
+      path: /root/serveur/
+      state: directory  
+
+  - name: check if clone exists 
+    stat: 
+      path: /root/serveur/ipxe
+    register: git_repo_exists
+
+  - name: clone iPxe git repository 
+    command: git clone https://github.com/ipxe/ipxe.git
+    args:
+      chdir: /root/serveur/
+    when: not git_repo_exists.stat.exists
+
+  - name: copy file bootconfig
+    copy:
+      src: bootconfig.ipxe
+      dest: /root/serveur/ipxe/src/bootconfig.ipxe
+
+  - name: Build iPXE binaries
+    command: "make bin/ipxe.pxe bin/undionly.kpxe bin/undionly.kkpxe bin/undionly.kkkpxe bin-x86_64-efi/ipxe.efi EMBED=bootconfig.ipxe"
+    args:
+      chdir: /root/serveur/ipxe/src/
+
+  - name: copy iPXE to firmware directory 
+    copy:
+      src: /root/serveur/ipxe/src/bin/{{ item }}
+      dest: /pxeboot/firmware/
+      remote_src: true
+    loop:
+      - ipxe.pxe
+      - undionly.kpxe
+      - undionly.kkpxe
+      - undionly.kkkpxe
+
+  - name: copy iPXE_bin to firmware directory
+    copy:
+      src: /root/serveur/ipxe/src/bin-x86_64-efi/ipxe.efi
+      dest: /pxeboot/firmware/
+      remote_src: true
+
+  - name: Installer dnsmasq
+    apt:
+      name: dnsmasq
+      state: present  
+      update_cache: yes 
+
+  - name: copy file dnsmasq 
+    copy:
+      src: dnsmasq.conf
+      dest: /etc/
+
+  - name: Restart service dnsmasq
+    service:
+      name: dnsmasq
+      state: restarted  
+
+  - name: Installer nfs-kernel-server
+    apt:
+      name: nfs-kernel-server
+      state: present
+      update_cache: yes 
+
+  - name: copy file exports  
+    copy:
+      src: exports 
+      dest: /etc/
+
+  - name : exports file 
+    command: exportfs -av 
+
+  - name: Check if Ubuntu ISO file exists
+    stat:
+      path: /root/serveur/ubuntu-22.04.2-desktop-amd64.iso
+    register: ubuntu_iso_file
+
+  - name: Download ubuntu_desktop 
+    get_url:
+      url: https://releases.ubuntu.com/jammy/ubuntu-22.04.2-desktop-amd64.iso
+      dest: /root/serveur/
+    when: ubuntu_iso_file.stat.exists==False  
+
+  - name: Check if Ubuntu server ISO file exists
+    stat:
+      path: /root/serveur/ubuntu-22.04.2-live-server-amd64.iso
+    register: ubuntu_iso_file
+
+  - name: Download ubuntu_serve
+    get_url:
+      url: https://releases.ubuntu.com/jammy/ubuntu-22.04.2-live-server-amd64.iso
+      dest: /root/serveur/
+    when: ubuntu_iso_file.stat.exists==False
+  
+  - name: Check if fedora ISO file exists
+    stat:
+      path: /root/serveur/Fedora-Live-Workstation-x86_64-22-3.iso
+    register: fedora_iso_file
+
+  - name: Download fedora 
+    get_url:
+      url: https://dl.fedoraproject.org/pub/archive/fedora/linux/releases/22/Workstation/x86_64/iso/Fedora-Live-Workstation-x86_64-22-3.iso
+      dest: /root/serveur/
+    when: fedora_iso_file.stat.exists==False
+ 
+
+  - name: Mount Ubuntu ISO image desktop 
+    mount:
+      src: /root/serveur/ubuntu-22.04.2-desktop-amd64.iso
+      path: /mnt/
+      fstype: iso9660
+      opts: loop 
+      state: mounted 
+
+  - name: create directory copy iso 
+    command: mkdir -pv /pxeboot/os-images/ubuntu-22.04.2-desktop-amd64
+
+  - name: copy directory mnt in pxeboot 
+    command: rsync -avz /mnt/ /pxeboot/os-images/ubuntu-22.04.2-desktop-amd64
+
+  - name: Unmount a mounted volume
+    mount:
+      path: /mnt/
+      state: unmounted
+
+
+  - name: Mount Ubuntu server ISO image
+    mount:
+      src: /root/serveur/ubuntu-22.04.2-live-server-amd64.iso
+      path: /mnt/
+      fstype: iso9660
+      opts: loop
+      state: mounted 
+
+  - name: create directory copy iso
+    command: mkdir -pv /pxeboot/os-images/ubuntu-22.04-live-server-amd64
+
+  - name: copy directory mnt ubuntu-server
+    command: rsync -avz /mnt/ /pxeboot/os-images/ubuntu-22.04-live-server-amd64
+
+  - name: Unmount a mounted volume
+    mount:
+      path: /mnt/
+      state: unmounted
+
+  - name: Mount Fedora ISO image
+    mount:
+      src: /root/serveur/Fedora-Live-Workstation-x86_64-22-3.iso
+      path: /mnt/
+      fstype: iso9660
+      opts: loop
+      state: mounted
+
+  - name: create directory copy iso
+    command: mkdir -pv /pxeboot/os-images/Fedora-Live-Workstation-x86_64-22-3
+
+  - name: copy directory mnt ubuntu-server
+    command: rsync -avz /mnt/ /pxeboot/os-images/Fedora-Live-Workstation-x86_64-22-3
+
+  - name: Unmount a mounted volume
+    mount:
+      path: /mnt/
+      state: unmounted
+
+
+  - name: copy file ipxe config for start
+    copy: 
+      src: boot.ipxe
+      dest: /pxeboot/config/
+
+  - name: copy file user_data for config user 
+    copy:
+      src: user-data 
+      dest: /var/www/html/ks/
+
+  - name: copy file meta-data for config user
+    copy:
+      src: meta-data
+      dest: /var/www/html/ks/
+
+  - name: instal package httpd 
+    apt:
+      name: apache2
+      state: present
+
+  - name: instal package httpd
+    service:
+      name: apache2
+      state: restarted
+
+  - name: copy file for configuration apache2
+    copy:
+      src: ks-server.conf
+      dest: /etc/apache2/sites-available/
+
+
+  - name: Create directories for installation os 
+    file:
+      path: /root/config/{{ item }}
+      state: directory
+    loop:
+      - os
+      - users
+      - adresse-mac
+  
+  - name: Create directories the users 
+    file:
+      path: /root/config/users{{ item }}
+      state: directory
+    loop:
+      - spino
+      - diallo
+      - dimittri
+      - emile
+
+  - name: copy file for installation os 
+    copy:
+      src: files/{{ item }}
+      dest: /root/config/os/
+    loop:
+      - ubuntu-server
+      - ubuntu-desktop
+      - fedora 

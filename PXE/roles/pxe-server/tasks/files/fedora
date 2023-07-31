@@ -1,0 +1,12 @@
+#!ipxe
+set server_ip  192.168.1.10
+set root_path /pxeboot
+
+
+set os_root os-images/Fedora-Live-Workstation-x86_64-22-3
+kernel tftp://${server_ip}/${os_root}/isolinux/vmlinuz0
+initrd tftp://${server_ip}/${os_root}/isolinux/initrd0.img
+imgargs vmlinuz0 initrd=initrd0.img ip=dhcp rd.live.image root=live:nfs://${server_ip}${root_path}/${os_root}/LiveOS/squashfs.img
+boot
+
+

@@ -1,0 +1,43 @@
+--- 
+- name: playbook for delette the installation 
+  become: true 
+  hosts: all
+  tasks: 
+
+  - name: delete file resolv 
+    file: 
+      path: /etc/resolv.conf 
+      state: absent
+
+  - name: delete directories for PXE boot server
+    file:
+      path: /pxeboot/{{ item }}
+      state: absent 
+    loop:
+      - config
+      - firmware
+      - os-images
+
+  - name: desintal required packages
+    apt:
+      name:
+        - liblzma-dev
+        - dnsmasq
+        - nfs-kernel-server
+      state: absent
+
+  - name: delete directory /root/serveur/
+    file:
+      dest: /root/serveur/
+      state: absent
+
+  - name: delete file dnsmasq
+    file:
+      dest: /etc/dnsmasq.conf 
+      state: absent
+
+  - name: delete file exports
+    file:
+      path: /etc/exports 
+      state: absent
+

@@ -1,0 +1,11 @@
+nuc:
+  IP: 192.168.1.11
+  MAC: 48:21:0b:33:59:91
+  STATE: on/ready
+spino:
+  IP: ''
+  MAC: 64:51:06:4c:aa:fb
+  STATE: 'off
+
+#spino: 64:51:06:4c:aa:fb
+#nuc: 48:21:0b:33:59:91

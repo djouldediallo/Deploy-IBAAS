@@ -1,0 +1,34 @@
+#!ipxe
+set server_ip  192.168.1.10
+set root_path /pxeboot
+menu Select an OS to boot
+item ubuntu-22.04.2-desktop-amd64           Install Ubuntu Desktop 22.04 LTS
+item ubuntu-22.04-live-server-amd64         Install Ubuntu live-server 22.04 LTS
+item Fedora-Live-Workstation-x86_64-22-3    Install Fedora-Live-Workstation 22
+
+choose --default exit --timeout 10000 option && goto ${option}
+
+#ubuntu-22.04.2-desktop-amd64
+#set os_root os-images/ubuntu-22.04.2-desktop-amd64
+#kernel tftp://${server_ip}/${os_root}/casper/vmlinuz
+#initrd tftp://${server_ip}/${os_root}/casper/initrd
+#imgargs vmlinuz initrd=initrd boot=casper maybe-ubiquity netboot=nfs ip=dhcp nfsroot=${server_ip}:${root_path}/${os_root} quiet splash ---
+#boot
+
+:ubuntu-22.04-live-server-amd64
+set os_root os-images/ubuntu-22.04-live-server-amd64
+kernel tftp://${server_ip}/${os_root}/casper/vmlinuz
+initrd tftp://${server_ip}/${os_root}/casper/initrd
+imgargs vmlinuz initrd=initrd boot=casper maybe-ubiquity netboot=nfs ip=dhcp nfsroot=${server_ip}:${root_path}/${os_root} autoinstall ds=nocloud-net;s=http://${server_ip}/ks/ quiet splash ---
+boot
+
+#:Fedora-Live-Workstation-x86_64-22-3
+#set os_root os-images/Fedora-Live-Workstation-x86_64-22-3
+#kernel tftp://${server_ip}/${os_root}/isolinux/vmlinuz0
+#initrd tftp://${server_ip}/${os_root}/isolinux/initrd0.img
+#imgargs vmlinuz0 initrd=initrd0.img ip=dhcp rd.live.image root=live:nfs://${server_ip}${root_path}/${os_root}/LiveOS/squashfs.img 
+#boot
+
+
+
+

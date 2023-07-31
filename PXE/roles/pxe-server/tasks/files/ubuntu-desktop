@@ -1,0 +1,11 @@
+#!ipxe
+set server_ip  192.168.1.10
+set root_path /pxeboot
+
+
+set os_root os-images/ubuntu-22.04.2-desktop-amd64
+kernel tftp://${server_ip}/${os_root}/casper/vmlinuz
+initrd tftp://${server_ip}/${os_root}/casper/initrd
+imgargs vmlinuz initrd=initrd boot=casper maybe-ubiquity netboot=nfs ip=dhcp nfsroot=${server_ip}:${root_path}/${os_root} quiet splash ---
+boot
+

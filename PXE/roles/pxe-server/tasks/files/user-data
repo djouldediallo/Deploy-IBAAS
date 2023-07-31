@@ -1,0 +1,24 @@
+#cloud-config
+autoinstall:
+  version: 1
+  identity:
+    hostname: nuc
+    username: spino
+    password: $6$Y6pRhyPOXrPnus9w$HdxATB/qbj4/b3a/PdF6CCDWGiTek9vU/SPuDqKulnkyPzycwq57syMBSRMD4kKbQPGugBUC3ZykBzY.dE15n/
+
+  ssh:
+    allow-pw: true
+    authorized-keys: [ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDSqY4OTWEe8E46lyv3ThXrltmE6SFvCewztqfbxZai/vSfZh5YGfWoFcBLiY9er3Sns6W+eRi7pJhraQcFInjffTnxiWANcp29jB/YrZCapBhKplaBbqxN9x4MjkM08ruVvROXvuDrA8sYcGVU334z9IjA9S2u/SdHi3KLjAyx+6gnMYxFk1AdErmFLm8Egr6XzfCMzPuYzRkxgbp+79jUCn7s6cJCQ6oV5vPrFlbaO+o832iSGohREO6PWOkV4P0rRg40F3xppIkjjpft+iDf0aJLJ3QmP0uiFZ2Umfy7LF0uDg3ALQJfN5pgyJMx/JNrOxOfT+hJKZZihOJXOFH50GtalPPUV8xwgVzHVflZPu9vPD7JJGetP9GYioE6aqB1JjCBS2wmEcq5u/kdjvtulc4CWSqtXZpwdT7F2tNwyFSAcRkKaBFfCuEYq7tEUo0Koy9t9Aw6bQ/Mk7Mdsn1QBxsDd+BFnnVVzqu1Pbi+3tXJj71AynkIX2t92uBdO9vl4GA81MP44Hw+JY5fkjlwzynpuHqKSsx0h55mP3W2PrvbErkl9YWz7zsacB5vEkzkPvzbOpRGvz5LDhv38eQoK3pUE4oB0TEzzwWFz2yfzV5h9r2rYhCLAsKqGqNjPvgHwgZPDn4sZ+NUaM2dfYwdpMmLKxQm6jr2y7Pp6ewMHw== spino@spino-HP-Z640-Workstation]
+    install-server: true
+
+  keyboard:
+    layout: fr
+    toggle: null
+    variant: ''
+  locale: C.UTF-8
+
+  late-commands:
+    - echo "INSTALLATION CURL"
+    - sudo apt install -y curl
+    - curl -k https://192.168.1.10:5000/stop
+

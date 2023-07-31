@@ -1,0 +1,12 @@
+[Unit]
+Description=Flask Service
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/root
+ExecStart=/bin/bash -c 'source flask/virtualenv/bin/activate && flask --app flaskApp.py run --host=0.0.0.0 --cert=config/ca/server.crt --key=config/ca/server.key'
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
